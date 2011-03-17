@@ -1,0 +1,13 @@
+*~
+*.pro.user
+lib
+Makefile*
+qoauth.framework
+tmp
+.DS_Store
+commit-message.txt
+moc_*
+*.o
+tests/ut_interface/ut_interface
+tests/ft_interface/ft_interface
+doc/html
