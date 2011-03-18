@@ -23,14 +23,12 @@ private:
     IRC_Session &activeSession;
     IRC_Settings *settings;
     QMap<QString,IRC_Session> activeSessions;
-    QMap<QString,QString> command_aliases;
-    QMap<QString,int(*function)(IRC_Session,irc_event_data)> commands;
+
+public slots:
+    void joinChannel(IRC_Session session,QString channel);
+    void partChannel(IRC_Session session,QString channel);
 
 private slots:
-
-
-private slots:
-    void on_messageField_returnPressed();
 };
 
 #endif // IRC_H

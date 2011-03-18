@@ -13,7 +13,7 @@
 
 struct irc_channel {
     QStringList users;
-    QString text,topic;
+    QString text,topic,chan;
     QTreeWidgetItem *chanId;
 };
 

@@ -9,3 +9,7 @@
     the text input. Socius and IRC scripts will not have access to this
     functionality just yet.
   **/
+
+#include "commands.h"
+
+

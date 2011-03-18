@@ -1,11 +1,37 @@
 #include "session.h"
 
-IRC_Session::IRC_Session(QObject* parent) : Irc::Session(parent)
+IRC_Session::IRC_Session(QObject* parent,QRect* frameSize,QTreeWidget* sParent) : Irc::Session(parent)
 {
+    sessionFrame->setGeometry(frameSize);
+
+    ChanList["status"] = new irc_channel;
+    ChanList["status"]->chanId = new QTreeWidgetItem(sParent);
+    ChanList["status"]->chanId->setText("< new >");
+
+    chanText = new QTextEdit(sessionFrame);
+    chanText->setGeometry(0,22,sessionFrame->width()-145,sessionFrame->height()-44);
+    chanText->setVisible(true);
+
+    chanInput = new QLineEdit(sessionFrame);
+    chanInput->setGeometry(102,sessionFrame->height()-22,22,sessionFrame->width()-102);
+    chanInput->setVisible(true);
+
+    nickButton = new QPushButton(sessionFrame);
+    nickButton->setGeometry(0,sessionFrame->height()-22,22,102);
+    nickButton->setVisible(true);
+
+    nickList = new QListWidget(sessionFrame);
+    nickList->setGeometry(sessionFrame->width()-145,22,sessionFrame->height()-44,145);
+    nickList->setVisible(true);
+
+    chanTitle = new QLineEdit(sessionFrame);
+    chanTitle->setGeometry(0,0,22,sessionFrame->width());
+    chanTitle->setVisible(true);
+
+
 
     connect(this, SIGNAL(connected()), SLOT(on_connected()));
     connect(this, SIGNAL(disconnected()), SLOT(on_disconnected()));
-
     connect(this, SIGNAL(msgJoined(QString, QString)), SLOT(on_msgJoined(QString, QString)));
     connect(this, SIGNAL(msgParted(QString, QString, QString)), SLOT(on_msgParted(QString, QString, QString)));
     connect(this, SIGNAL(msgQuit(QString, QString)), SLOT(on_msgQuit(QString, QString)));
@@ -26,11 +52,10 @@ IRC_Session::IRC_Session(QObject* parent) : Irc::Session(parent)
 
 void IRC_Session::on_connected()
 {
-    g_parent->chantext->append("Connection to irc.paradoxirc.com Successful!\n");
-    g_parent->nickLabel->setText(this->nick());
+    chantext->append("Connection to irc.paradoxirc.com Successful!\n");
+    nickButton->setText(nick);
 
-    this->ServerItem = new QTreeWidgetItem(g_parent->serverTree);
-    this->ServerItem->setText(0,this->host());
+    ServerItem->setText(this->host());
 }
 
 void IRC_Session::on_disconnected()
@@ -143,15 +168,30 @@ void IRC_Session::on_msgNumericMessageReceived(const QString& origin, uint code,
     switch(code) {
 
     case 332:
-        g_parent->chantitle->setText(params.at(2));
+
+        if(ChanList[origin]) {
+            ChanList[origin]->topic = params.at(2);
+
+            if((activeChannel->chanId->text() == origin) && isActive)
+                chanTitle->setText(params.at(2));
+
+        }
+
     break;
 
     case 353:
-        QString buff = params.at(3);
-        this->ChanList[params.at(2)]->users = buff.split(" ",QString::SkipEmptyParts);
-        g_parent->nickList->clear();
-        for (int i=0;i<this->ChanList[params.at(2)]->users.size();++i) {
-            g_parent->nickList->addItem(new QListWidgetItem(this->ChanList[params.at(2)]->users.at(i)));
+        if(ChanList[params.at(2)]) {
+
+            QString buff = params.at(3);
+            ChanList[params.at(2)]->users = buff.split(" ",QString::SkipEmptyParts);
+
+            if((activeChannel->chanId->text() == origin) && isActive) {
+                nickList->clear();
+                for (int i=0;i<this->ChanList[params.at(2)]->users.size();++i) {
+                    nickList->addItem(new QListWidgetItem(ChanList[params.at(2)]->users.at(i)));
+                }
+            }
+
         }
     break;
 
@@ -163,9 +203,11 @@ void IRC_Session::on_msgNumericMessageReceived(const QString& origin, uint code,
 
 void IRC_Session::on_msgUnknownMessageReceived(const QString& origin, const QStringList& params)
 {
-    g_parent->chantext->append("<b>Unknown Message Recieved From:</b> " + origin + " <b>Message:</b> ");
-    for (int i=0;i<params.size();++i) {
-        g_parent->chantext->append(params.at(i) + " ");
-    }
-    g_parent->chantext->append("\n");
+    ChanList["status"]->text += "<b>Unknown Message Recieved From:</b> " + origin + " <b>Message:</b> ";
+
+    for (int i=0;i<params.size();++i)
+        ChanList["status"]->text += append(params.at(i) + " ");
+
+    ChanList["status"]->text += "\n";
+
 }

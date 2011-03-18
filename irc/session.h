@@ -1,17 +1,34 @@
 #ifndef SESSION_H
 #define SESSION_H
 
+#include <QTextEdit>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QPushButton>
+
 #include "utilities.h"
 
 class IRC_Session : public Irc::Session {
     Q_OBJECT
 
     public:
-        IRC(QObject* parent = 0);
+        IRC(QObject* parent = 0,QRect* frameSize = 0,QTreeWidget* sparent = 0);
+
         QMap<QString,irc_channel*> ChanList;
         QTreeWidgetItem *ServerItem;
+        irc_channel *activeChannel;
+
+        QTextEdit *chanText;
+        QLineEdit *chanInput,*chanTitle;
+        QListWidget *nickList;
+        QFrame *sessionFrame;
+        QPushButton *nickButton;
+
+        QRect *frameSize;
+        QString server,nick;
         QMap<QString,QString> *EventTemplates;
 
+        bool isActive;
 
     protected Q_SLOTS:
         void on_connected();
@@ -33,9 +50,15 @@ class IRC_Session : public Irc::Session {
         void on_msgNumericMessageReceived(const QString& origin, uint code, const QStringList& params);
         void on_msgUnknownMessageReceived(const QString& origin, const QStringList& params);
 
+    public Q_SLOTS:
+        void activateSession();
+        void deactivateSession();
+        void resize(QRect frameSize = 0);
+
     signals:
+        void loadFinished();
         void on_msg(QString,QString);
         void event(IRC_Session,irc_event_data);
-    };
+};
 
 #endif // SESSION_H

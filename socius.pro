@@ -27,7 +27,8 @@ HEADERS  += socius.h \
     irc/irc.h \
     twitter/twitter.h \
     irc/session.h \
-    irc/utilities.h
+    irc/utilities.h \
+    irc/commands.h
 
 FORMS    += socius.ui \
     irc.ui
