@@ -2,7 +2,10 @@
 
 IRC_Session::IRC_Session(QObject* parent,QRect* frameSize,QTreeWidget* sParent) : Irc::Session(parent)
 {
+
+    sessionFrame = new QFrame(parent);
     sessionFrame->setGeometry(frameSize);
+    sessionFrame->setVisible(true);
 
     ChanList["status"] = new irc_channel;
     ChanList["status"]->chanId = new QTreeWidgetItem(sParent);
@@ -28,8 +31,6 @@ IRC_Session::IRC_Session(QObject* parent,QRect* frameSize,QTreeWidget* sParent) 
     chanTitle->setGeometry(0,0,22,sessionFrame->width());
     chanTitle->setVisible(true);
 
-
-
     connect(this, SIGNAL(connected()), SLOT(on_connected()));
     connect(this, SIGNAL(disconnected()), SLOT(on_disconnected()));
     connect(this, SIGNAL(msgJoined(QString, QString)), SLOT(on_msgJoined(QString, QString)));
@@ -48,19 +49,92 @@ IRC_Session::IRC_Session(QObject* parent,QRect* frameSize,QTreeWidget* sParent) 
     connect(this, SIGNAL(msgNumericMessageReceived(QString, uint, QStringList)), SLOT(on_msgNumericMessageReceived(QString, uint, QStringList)));
     connect(this, SIGNAL(msgUnknownMessageReceived(QString, QStringList)), SLOT(on_msgUnknownMessageReceived(QString, QStringList)));
 
+    connect(sPartent,SIGNAL(itemClicked(QTreeWidgetItem *,int)),this,SLOT(itemClicked(QTreeWidgetItem *,int)));
+
+}
+
+void IRC_Session::itemClicked(QTreeWidgetItem *item, int i) {
+
+    //Is the item clicked a child of this sessions server?
+    if(item->parent() == ChanList["status"]->chanId) {
+
+        if(!isActive)
+            isActive = true;
+
+        if(ChanList[item->text()])
+            switchChannels(item->text());
+
+        else {
+            //Create and report error data
+            return;
+        }
+
+    }
+
+    else {
+
+        if(isActive)
+            isActive = false;
+
+        return;
+    }
+
+}
+
+void IRC_Session::switchChannels(QString channel) {
+
+    if(ChanList[channel]) {
+
+        activeChannel = channel;
+        chanTitle->setText(ChanList[channel]->topic);
+        chanText->setText(ChanList[channel]->text);
+
+        //Delete the physical QListWidgetItems from the nick list
+        for(int i=0;i<nickList->count();i++)
+            delete nickList->item(i);
+
+        //Add the new QListWidgetItems
+        for(int i=0;i<this->ChanList[channel]->users.size();i++)
+            nickList->addItem(new QListWidgetItem(ChanList[channel]->users.at(i)));
+
+        return;
+
+    }
+
+    else {
+        //Create and report error data
+        return;
+    }
+
 }
 
 void IRC_Session::on_connected()
 {
-    chantext->append("Connection to irc.paradoxirc.com Successful!\n");
-    nickButton->setText(nick);
+    if(ChanList["status"]) {
+        ChanList["status"]->text += ("Connection to " + host() + " established..\n");
+        ChanList["status"]->chanId->setText(host());
 
-    ServerItem->setText(this->host());
+        if(isActive && (ChanList["status"]->chanId == activeChannel->chanId))
+            chanText = ChanList["status"]->text;
+        //else
+        //    ChanList["status"]->chanId->setTextColor();
+    }
+
 }
 
 void IRC_Session::on_disconnected()
 {
-    g_parent->chantext->append("\nDisconnected..\n");
+
+    for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+        i.chanId->setText("(" + ChanList["status"]->chanId->child(i)->text() + ")");
+        i.text += ("Disconnected from " + host() + "..\n");
+    }
+
+    if(isActive)
+        chanText->setText(ChanList[activeChannel]->text);
+
+    return;
+
 }
 
 void IRC_Session::on_msgJoined(const QString& origin, const QString& channel)

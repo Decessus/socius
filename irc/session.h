@@ -16,13 +16,14 @@ class IRC_Session : public Irc::Session {
 
         QMap<QString,irc_channel*> ChanList;
         QTreeWidgetItem *ServerItem;
-        irc_channel *activeChannel;
+        QString activeChannel;
 
         QTextEdit *chanText;
         QLineEdit *chanInput,*chanTitle;
         QListWidget *nickList;
         QFrame *sessionFrame;
         QPushButton *nickButton;
+        QTreeWidget *sParent;
 
         QRect *frameSize;
         QString server,nick;
@@ -50,10 +51,14 @@ class IRC_Session : public Irc::Session {
         void on_msgNumericMessageReceived(const QString& origin, uint code, const QStringList& params);
         void on_msgUnknownMessageReceived(const QString& origin, const QStringList& params);
 
+private:
+        void switchChannels(QString channel);
+
     public Q_SLOTS:
         void activateSession();
         void deactivateSession();
         void resize(QRect frameSize = 0);
+        void itemClicked(QTreeWidgetItem *item,int i);
 
     signals:
         void loadFinished();
