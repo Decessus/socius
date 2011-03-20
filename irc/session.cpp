@@ -9,7 +9,7 @@ IRC_Session::IRC_Session(QObject* parent,QRect* frameSize,QTreeWidget* sParent) 
 
     ChanList["status"] = new irc_channel;
     ChanList["status"]->chanId = new QTreeWidgetItem(sParent);
-    ChanList["status"]->chanId->setText("< new >");
+    ChanList["status"]->chanId->setText(0,"< new >");
 
     chanText = new QTextEdit(sessionFrame);
     chanText->setGeometry(0,22,sessionFrame->width()-145,sessionFrame->height()-44);
@@ -53,6 +53,8 @@ IRC_Session::IRC_Session(QObject* parent,QRect* frameSize,QTreeWidget* sParent) 
 
 }
 
+
+
 void IRC_Session::itemClicked(QTreeWidgetItem *item, int i) {
 
     //Is the item clicked a child of this sessions server?
@@ -81,6 +83,8 @@ void IRC_Session::itemClicked(QTreeWidgetItem *item, int i) {
 
 }
 
+
+
 void IRC_Session::switchChannels(QString channel) {
 
     if(ChanList[channel]) {
@@ -108,11 +112,13 @@ void IRC_Session::switchChannels(QString channel) {
 
 }
 
+
+
 void IRC_Session::on_connected()
 {
-    if(ChanList["status"]) {
-        ChanList["status"]->text += ("Connection to " + host() + " established..\n");
-        ChanList["status"]->chanId->setText(host());
+    if(ChanList.contains("status")) {
+        ChanList["status"]->text.append("Connection to " + host() + " established..\n");
+        ChanList["status"]->chanId->setText(0,host());
 
         if(isActive && (ChanList["status"]->chanId == activeChannel->chanId))
             chanText = ChanList["status"]->text;
@@ -121,6 +127,8 @@ void IRC_Session::on_connected()
     }
 
 }
+
+
 
 void IRC_Session::on_disconnected()
 {
@@ -137,90 +145,223 @@ void IRC_Session::on_disconnected()
 
 }
 
+
+
 void IRC_Session::on_msgJoined(const QString& origin, const QString& channel)
 {
     if ( origin == this->nick() ) {
-        this->ChanList[channel] = new irc_channel;
-        this->ChanList[channel]->chanId = new QTreeWidgetItem(this->ServerItem);
-        this->ChanList[channel]->chanId->setText(0,channel);
-        this->ServerItem->setExpanded(true);
+
+        ChanList[channel] = new irc_channel;
+        ChanList[channel]->chanId = new QTreeWidgetItem(ChanList["status"]->chanId);
+        ChanList[channel]->chanId->setText(0,channel);
+
+        if(isActive) {
+
+            ChanList["status"]->chanId->setExpanded(true);
+            switchChannels(channels);
+            ChanList[channel]->text.append("Now talking in channel " + channel + "..\n");
+            chanText->setText(ChanList[channel]->text);
+        }
+
     } else {
-        g_parent->chantext->append(origin + " is now chatting in " + channel + "\n");
+
+        ChanList[channel]->text.append(origin + " is now chatting in " + channel + "\n");
+
+        if(isActive && channel == activeChannel)
+            chanText->setText(ChanList[channel]->text);
+
     }
     this->names(channel);
 }
 
+
+
 void IRC_Session::on_msgParted(const QString& origin, const QString& channel, const QString& message)
 {
-    if ( origin == this->nick() ) {
+    if ( origin == nick() ) {
 
         if(ChanList.contains(channel)) {
 
-            ServerItem->removeChild(ChanList[channel]->chanId);
+            ChanList["status"]->chanId->removeChild(ChanList[channel]->chanId);
             delete ChanList[channel];
+
         }
 
     } else {
 
         if(ChanList.contains(channel)) {
             ChanList[channel]->users.removeOne(origin);
-            ChanList[channel]->messages.append(origin + " has left the channel (" + message + ")\n");
+            ChanList[channel]->text.append(origin + " has left the channel (" + message + ")\n");
         }
         names(channel);
     }
 
-
 }
+
+
 
 void IRC_Session::on_msgQuit(const QString& origin, const QString& message)
 {
     if ( origin == this->nick() ) {
 
-    } else {
-        emit eventRefresh(this->host(),);
-        nameAll();
     }
+
+    else {
+
+        for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+            names(i.key());
+            ChanList[i.key()]->text.append(origin + " has quit (" + message + ")\n");
+        }
+
+        if(isActive)
+            chanText->setText(ChanList[activeChannel]->text);
+
+    }
+
 }
 
-void IRC_Session::on_msgNickChanged(const QString& origin, const QString& nick)
+
+
+void IRC_Session::on_msgNickChanged(const QString& origin, const QString& newNick)
 {
-    if ( origin == this->nick() ) {
-        g_parent->chantext->append("<b>Nick Changed</b>\n");
-    } else {
-        ChanList[channel]->users.removeOne(origin);
+    if (newNick == nick() && isActive) {
+
+        nickButton->setText(nick);
+        ChanList[activeChannel]->text.append("Your nick has been changed to: " + nick + "..\n");
+        chanText->setText(ChanList[activeChannel]->text);
+
     }
-    nameAll();
+
+    for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+
+        if(ChanList[i.key()]->users.contains(origin)) {
+            names(i.key());
+
+            if(newNick != nick())
+                ChanList[i.key()]->text.append("User " + origin + " has changed their nick to: " + nick + "..\n");
+        }
+
+    }
+
+    if(isActive)
+        chanText->setText(ChanList[activeChannel]->text);
 }
+
+
 
 void IRC_Session::on_msgModeChanged(const QString& origin, const QString& receiver, const QString& mode, const QString& args)
 {
 
+    if(receiver.startsWith('#') && ChanList.contains(receiver)) {
+
+        ChanList[receiver]->text.append(origin + " has set channel mode(s): " + mode);
+
+        if(!args.isEmpty())
+            ChanList[receiver]->text.append(" (" + args + ")\n");
+        else
+            ChanList[receiver]->text.append("\n");
+
+        if(isActive && receiver == activeChannel)
+            chanText->setText(ChanList[activeChannel]->text);
+
+    }
+
+    else {
+
+        for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+
+            if(ChanList[i.key()]->users.contains(receiver)) {
+                ChanList[i.key()]->text.append(origin + " has set channel mode(s): " + mode);
+
+                if(!args.isEmpty())
+                    ChanList[i.key()]->text.append(" (" + args + ") on user " + receiver + "\n");
+                else
+                    ChanList[i.key()]->text.append(" on user " + receiver + "\n");
+
+                if(isActive && i.key() == activeChannel)
+                    chanText->setText(ChanList[activeChannel]->text);
+            }
+
+        }
+
+    }
+
 }
+
+
 
 void IRC_Session::on_msgTopicChanged(const QString& origin, const QString& channel, const QString& topic)
 {
-    g_parent->chantext->append(origin + " has changed the topic to: " + topic + "\n");
-    g_parent->chantitle->setText(topic);
+
+    if(ChanList.contains(channel)) {
+
+        ChanList[channel]->text.append(origin + " has changed the topic to: " + topic + "\n");
+        ChanList[channel]->topic = topic;
+
+        if(isActive && channel == activeChannel) {
+            chanText->setText(ChanList[activeChannel]->text);
+            chanTitle->setText(ChanList[channel]->topic);
+        }
+
+    }
+
 }
+
+
 
 void IRC_Session::on_msgInvited(const QString& origin, const QString& receiver, const QString& channel)
 {
 
 }
 
+
+
 void IRC_Session::on_msgKicked(const QString& origin, const QString& channel, const QString& nick, const QString& message)
 {
-    g_parent->chantext->append(origin + " has kicked " + nick + "(" + message + ")");
+    if(ChanList.contains(channel)) {
+        ChanList[channel]->text.append(origin + " has kicked " + nick + "(" + message + ")");
+
+        if(isActive && channel == activeChannel)
+            chanText->setText(ChanList[channel]->text);
+
+    }
 }
+
+
 
 void IRC_Session::on_msgMessageReceived(const QString& origin, const QString& receiver, const QString& message)
 {
-    g_parent->chantext->append("<" + origin + "> " + message);
+    if(ChanList.contains(channel)) {
+        ChanList[channel]->text.append("<" + origin + "> " + message);
+
+        if(isActive && channel == activeChannel)
+            chanText->setText(ChanList[channel]->text);
+    }
 }
+
+
 
 void IRC_Session::on_msgNoticeReceived(const QString& origin, const QString& receiver, const QString& notice)
 {
-    g_parent->chantext->append("<b>Notice Recieved From:</b> " + origin + " <b>Message:</b> " + notice);
+    bool isInChan = false;
+
+    for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+        if(ChanList[i.key()]->users.contains(origin)) {
+            ChanList[i.key()]->text.append("<b>Notice Recieved From:</b> " + origin +
+                                           " <b>Message:</b> " + notice + "\n");
+
+            if(!isInChan)
+                isInChan = true;
+        }
+    }
+
+    if(!isInChan)
+        ChanList[i.key()]->text.append("<b>Notice Recieved From:</b> " + origin + " <b>Message:</b> " + notice +
+                                       " (User is not in any channels as you)\n");
+
+    if(isActive && ChanList[activeChannel]->users.contains(origin))
+        chanText->setText(ChanList[activeChannel]->text);
+
 }
 
 void IRC_Session::on_msgCtcpRequestReceived(const QString& origin, const QString& request)
@@ -241,6 +382,7 @@ void IRC_Session::on_msgNumericMessageReceived(const QString& origin, uint code,
 {
     switch(code) {
 
+        /* Topic change already handled by libircclient-qt, was this a possible fix?
     case 332:
 
         if(ChanList[origin]) {
@@ -252,6 +394,7 @@ void IRC_Session::on_msgNumericMessageReceived(const QString& origin, uint code,
         }
 
     break;
+    */
 
     case 353:
         if(ChanList[params.at(2)]) {
@@ -279,8 +422,10 @@ void IRC_Session::on_msgUnknownMessageReceived(const QString& origin, const QStr
 {
     ChanList["status"]->text += "<b>Unknown Message Recieved From:</b> " + origin + " <b>Message:</b> ";
 
-    for (int i=0;i<params.size();++i)
-        ChanList["status"]->text += append(params.at(i) + " ");
+    if(!params.isEmpty()) {
+        for (int i=0;i<params.size();++i)
+            ChanList["status"]->text += append(params.at(i) + " ");
+    }
 
     ChanList["status"]->text += "\n";
 

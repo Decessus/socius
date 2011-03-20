@@ -38,7 +38,7 @@ class IRC_Session : public Irc::Session {
         void on_msgJoined(const QString& origin, const QString& channel);
         void on_msgParted(const QString& origin, const QString& channel, const QString& message);
         void on_msgQuit(const QString& origin, const QString& message);
-        void on_msgNickChanged(const QString& origin, const QString& nick);
+        void on_msgNickChanged(const QString& origin, const QString& newNick);
         void on_msgModeChanged(const QString& origin, const QString& receiver, const QString& mode, const QString& args);
         void on_msgTopicChanged(const QString& origin, const QString& channel, const QString& topic);
         void on_msgInvited(const QString& origin, const QString& receiver, const QString& channel);
