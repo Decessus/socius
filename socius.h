@@ -7,8 +7,9 @@
 #include <QFile>
 #include <QMessageBox>
 
-#include "twitter.h"
+#include "twitter/twitter.h"
 #include "error.h"
+#include "irc/irc.h"
 
 namespace Ui {
     class socius;
@@ -32,8 +33,11 @@ private slots:
     void on_chatPortal_clicked();
     void on_activityStream_clicked();
     void getError(errorData* error);
+
 private:
     Ui::socius *ui;
+
+    IRC *ChatPortal;
 };
 
 #endif // SOCIUS_H

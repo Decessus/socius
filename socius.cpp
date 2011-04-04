@@ -7,11 +7,7 @@ socius::socius(QWidget *parent) :
     ui(new Ui::socius)
 {
     ui->setupUi(this);
-    twitter *twitt = new twitter(this,"email","password");
-    twitt->webFrame = ui->textEdit;
-    twitt->authRequestFrame = ui->authWidget;
-    connect(twitt,SIGNAL(emitError(errorData*)),this,SLOT(getError(errorData*)));
-    twitt->init();
+
 }
 void socius::getError(errorData* error) {
     QString errorTitle;
@@ -212,6 +208,12 @@ void socius::on_chatPortal_clicked()
 
     if(ui->activityStream->isChecked()) {
         ui->activityStream->setChecked(false);
+
+        if(!ChatPortal) {
+            ChatPortal = new IRC(this);
+            ChatPortal->newSession("irc.paradoxirc.net",6667);
+        }
+
         return;
     }
 

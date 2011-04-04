@@ -3,19 +3,15 @@
 
 #include <QStringList>
 #include <QTreeWidgetItem>
+#include <QTime>
 #include <QList>
+#include <QQueue>
 #include <QMap>
 
 #include "3rdParty/libircclient-qt-0.5.0/include/irc.h"
 #include "3rdParty/libircclient-qt-0.5.0/include/ircbuffer.h"
 #include "3rdParty/libircclient-qt-0.5.0/include/ircsession.h"
 #include "3rdParty/libircclient-qt-0.5.0/include/ircutil.h"
-
-struct irc_channel {
-    QStringList users;
-    QString text,topic,chan;
-    QTreeWidgetItem *chanId;
-};
 
 namespace Ui {
     class IRC;

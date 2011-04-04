@@ -1,381 +1,295 @@
 #include "session.h"
 
-IRC_Session::IRC_Session(QObject* parent,QRect* frameSize,QTreeWidget* sParent) : Irc::Session(parent)
-{
+IRC_Session::IRC_Session(QObject* parent,,QTreeWidget* sParent) : Irc::Session(parent) {
 
-    sessionFrame = new QFrame(parent);
-    sessionFrame->setGeometry(frameSize);
-    sessionFrame->setVisible(true);
-
-    ChanList["status"] = new irc_channel;
-    ChanList["status"]->chanId = new QTreeWidgetItem(sParent);
-    ChanList["status"]->chanId->setText(0,"< new >");
-
-    chanText = new QTextEdit(sessionFrame);
-    chanText->setGeometry(0,22,sessionFrame->width()-145,sessionFrame->height()-44);
-    chanText->setVisible(true);
-
-    chanInput = new QLineEdit(sessionFrame);
-    chanInput->setGeometry(102,sessionFrame->height()-22,22,sessionFrame->width()-102);
-    chanInput->setVisible(true);
-
-    nickButton = new QPushButton(sessionFrame);
-    nickButton->setGeometry(0,sessionFrame->height()-22,22,102);
-    nickButton->setVisible(true);
-
-    nickList = new QListWidget(sessionFrame);
-    nickList->setGeometry(sessionFrame->width()-145,22,sessionFrame->height()-44,145);
-    nickList->setVisible(true);
-
-    chanTitle = new QLineEdit(sessionFrame);
-    chanTitle->setGeometry(0,0,22,sessionFrame->width());
-    chanTitle->setVisible(true);
+    ChanList.insert("status",new irc_channel);
+    ServerItem = new QTreeWidgetItem(sParent);
+    ServerItem->setText(0,"< new >");
+    Message temp = ChanList["status"]->append("INIT","*","Initializing protocol..");
+    emit init_message(this,temp);
 
     connect(this, SIGNAL(connected()), SLOT(on_connected()));
     connect(this, SIGNAL(disconnected()), SLOT(on_disconnected()));
-    connect(this, SIGNAL(msgJoined(QString, QString)), SLOT(on_msgJoined(QString, QString)));
-    connect(this, SIGNAL(msgParted(QString, QString, QString)), SLOT(on_msgParted(QString, QString, QString)));
     connect(this, SIGNAL(msgQuit(QString, QString)), SLOT(on_msgQuit(QString, QString)));
+    connect(this, SIGNAL(msgJoined(QString, QString)), SLOT(on_msgJoined(QString, QString)));
     connect(this, SIGNAL(msgNickChanged(QString, QString)), SLOT(on_msgNickChanged(QString, QString)));
-    connect(this, SIGNAL(msgModeChanged(QString, QString, QString, QString)), SLOT(on_msgModeChanged(QString, QString, QString, QString)));
-    connect(this, SIGNAL(msgTopicChanged(QString, QString, QString)), SLOT(on_msgTopicChanged(QString, QString, QString)));
+    connect(this, SIGNAL(msgParted(QString, QString, QString)), SLOT(on_msgParted(QString, QString, QString)));
     connect(this, SIGNAL(msgInvited(QString, QString, QString)), SLOT(on_msgInvited(QString, QString, QString)));
+    connect(this, SIGNAL(msgCtcpReplyReceived(QString, QString)), SLOT(on_msgCtcpReplyReceived(QString, QString)));
+    connect(this, SIGNAL(msgCtcpRequestReceived(QString, QString)), SLOT(on_msgCtcpRequestReceived(QString, QString)));
+    connect(this, SIGNAL(msgTopicChanged(QString, QString, QString)), SLOT(on_msgTopicChanged(QString, QString, QString)));
+    connect(this, SIGNAL(msgNoticeReceived(QString, QString, QString)), SLOT(on_msgNoticeReceived(QString, QString, QString)));
     connect(this, SIGNAL(msgKicked(QString, QString, QString, QString)), SLOT(on_msgKicked(QString, QString, QString, QString)));
     connect(this, SIGNAL(msgMessageReceived(QString, QString, QString)), SLOT(on_msgMessageReceived(QString, QString, QString)));
-    connect(this, SIGNAL(msgNoticeReceived(QString, QString, QString)), SLOT(on_msgNoticeReceived(QString, QString, QString)));
-    connect(this, SIGNAL(msgCtcpRequestReceived(QString, QString)), SLOT(on_msgCtcpRequestReceived(QString, QString)));
-    connect(this, SIGNAL(msgCtcpReplyReceived(QString, QString)), SLOT(on_msgCtcpReplyReceived(QString, QString)));
-    connect(this, SIGNAL(msgCtcpActionReceived(QString, QString, QString)), SLOT(on_msgCtcpActionReceived(QString, QString, QString)));
-    connect(this, SIGNAL(msgNumericMessageReceived(QString, uint, QStringList)), SLOT(on_msgNumericMessageReceived(QString, uint, QStringList)));
     connect(this, SIGNAL(msgUnknownMessageReceived(QString, QStringList)), SLOT(on_msgUnknownMessageReceived(QString, QStringList)));
+    connect(this, SIGNAL(msgCtcpActionReceived(QString, QString, QString)), SLOT(on_msgCtcpActionReceived(QString, QString, QString)));
+    connect(this, SIGNAL(msgModeChanged(QString, QString, QString, QString)), SLOT(on_msgModeChanged(QString, QString, QString, QString)));
+    connect(this, SIGNAL(msgNumericMessageReceived(QString, uint, QStringList)), SLOT(on_msgNumericMessageReceived(QString, uint, QStringList)));
 
-    connect(sPartent,SIGNAL(itemClicked(QTreeWidgetItem *,int)),this,SLOT(itemClicked(QTreeWidgetItem *,int)));
+}
 
+IRC_Session::IRC_Session(server_profile profile, QObject *parent = 0, QTreeWidget *sParent = 0)  : Irc::Session(parent) {
+
+    ChanList.insert("status",new irc_channel);
+    ServerItem = new QTreeWidgetItem(sParent);
+    ServerItem->setText(0,profile.HostName);
+    Message temp = ChanList["status"]->append("INIT","*","Initializing protocol..");
+    emit init_message(this,temp);
+
+    connect(this, SIGNAL(connected()), SLOT(on_connected()));
+    connect(this, SIGNAL(disconnected()), SLOT(on_disconnected()));
+    connect(this, SIGNAL(msgQuit(QString, QString)), SLOT(on_msgQuit(QString, QString)));
+    connect(this, SIGNAL(msgJoined(QString, QString)), SLOT(on_msgJoined(QString, QString)));
+    connect(this, SIGNAL(msgNickChanged(QString, QString)), SLOT(on_msgNickChanged(QString, QString)));
+    connect(this, SIGNAL(msgParted(QString, QString, QString)), SLOT(on_msgParted(QString, QString, QString)));
+    connect(this, SIGNAL(msgInvited(QString, QString, QString)), SLOT(on_msgInvited(QString, QString, QString)));
+    connect(this, SIGNAL(msgCtcpReplyReceived(QString, QString)), SLOT(on_msgCtcpReplyReceived(QString, QString)));
+    connect(this, SIGNAL(msgCtcpRequestReceived(QString, QString)), SLOT(on_msgCtcpRequestReceived(QString, QString)));
+    connect(this, SIGNAL(msgTopicChanged(QString, QString, QString)), SLOT(on_msgTopicChanged(QString, QString, QString)));
+    connect(this, SIGNAL(msgNoticeReceived(QString, QString, QString)), SLOT(on_msgNoticeReceived(QString, QString, QString)));
+    connect(this, SIGNAL(msgKicked(QString, QString, QString, QString)), SLOT(on_msgKicked(QString, QString, QString, QString)));
+    connect(this, SIGNAL(msgMessageReceived(QString, QString, QString)), SLOT(on_msgMessageReceived(QString, QString, QString)));
+    connect(this, SIGNAL(msgUnknownMessageReceived(QString, QStringList)), SLOT(on_msgUnknownMessageReceived(QString, QStringList)));
+    connect(this, SIGNAL(msgCtcpActionReceived(QString, QString, QString)), SLOT(on_msgCtcpActionReceived(QString, QString, QString)));
+    connect(this, SIGNAL(msgModeChanged(QString, QString, QString, QString)), SLOT(on_msgModeChanged(QString, QString, QString, QString)));
+    connect(this, SIGNAL(msgNumericMessageReceived(QString, uint, QStringList)), SLOT(on_msgNumericMessageReceived(QString, uint, QStringList)));
+
+    temp = ChanList["status"]->append("INIT","*","Setting up server environment..");
+    emit init_message(this,temp);
+
+    setAutoJoinChannels(profile.AutoJoinChannels);
+    setRealName(profile.RealName);
+
+}
+
+void IRC_Session::on_connected() {
+    ChanList["status"]->append("CONNECTED",host(),"Connection Established..");
+    emit event_connected(this);
+    return;
 }
 
 
 
-void IRC_Session::itemClicked(QTreeWidgetItem *item, int i) {
+void IRC_Session::on_disconnected() {
 
-    //Is the item clicked a child of this sessions server?
-    if(item->parent() == ChanList["status"]->chanId) {
-
-        if(!isActive)
-            isActive = true;
-
-        if(ChanList[item->text()])
-            switchChannels(item->text());
-
-        else {
-            //Create and report error data
-            return;
-        }
-
+    for(QHash<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+        ChanList[i.key()]->chanId->setText("(" + i.value()->chanId->setText + ")");
+        ChanList[i.key()]->append("DISCONNECTED",host(),"");
     }
 
-    else {
-
-        if(isActive)
-            isActive = false;
-
-        return;
-    }
-
-}
-
-
-
-void IRC_Session::switchChannels(QString channel) {
-
-    if(ChanList[channel]) {
-
-        activeChannel = channel;
-        chanTitle->setText(ChanList[channel]->topic);
-        chanText->setText(ChanList[channel]->text);
-
-        //Delete the physical QListWidgetItems from the nick list
-        for(int i=0;i<nickList->count();i++)
-            delete nickList->item(i);
-
-        //Add the new QListWidgetItems
-        for(int i=0;i<this->ChanList[channel]->users.size();i++)
-            nickList->addItem(new QListWidgetItem(ChanList[channel]->users.at(i)));
-
-        return;
-
-    }
-
-    else {
-        //Create and report error data
-        return;
-    }
-
-}
-
-
-
-void IRC_Session::on_connected()
-{
-    if(ChanList.contains("status")) {
-        ChanList["status"]->text.append("Connection to " + host() + " established..\n");
-        ChanList["status"]->chanId->setText(0,host());
-
-        if(isActive && (ChanList["status"]->chanId == activeChannel->chanId))
-            chanText = ChanList["status"]->text;
-        //else
-        //    ChanList["status"]->chanId->setTextColor();
-    }
-
-}
-
-
-
-void IRC_Session::on_disconnected()
-{
-
-    for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
-        i.chanId->setText("(" + ChanList["status"]->chanId->child(i)->text() + ")");
-        i.text += ("Disconnected from " + host() + "..\n");
-    }
-
-    if(isActive)
-        chanText->setText(ChanList[activeChannel]->text);
-
+    emit event_disconnected(this);
     return;
 
 }
 
 
 
-void IRC_Session::on_msgJoined(const QString& origin, const QString& channel)
-{
-    if ( origin == this->nick() ) {
+void IRC_Session::on_msgJoined(const QString& origin, const QString& channel) {
 
-        ChanList[channel] = new irc_channel;
-        ChanList[channel]->chanId = new QTreeWidgetItem(ChanList["status"]->chanId);
-        ChanList[channel]->chanId->setText(0,channel);
-
-        if(isActive) {
-
-            ChanList["status"]->chanId->setExpanded(true);
-            switchChannels(channels);
-            ChanList[channel]->text.append("Now talking in channel " + channel + "..\n");
-            chanText->setText(ChanList[channel]->text);
-        }
-
-    } else {
-
-        ChanList[channel]->text.append(origin + " is now chatting in " + channel + "\n");
-
-        if(isActive && channel == activeChannel)
-            chanText->setText(ChanList[channel]->text);
-
-    }
-    this->names(channel);
-}
-
-
-
-void IRC_Session::on_msgParted(const QString& origin, const QString& channel, const QString& message)
-{
     if ( origin == nick() ) {
-
-        if(ChanList.contains(channel)) {
-
-            ChanList["status"]->chanId->removeChild(ChanList[channel]->chanId);
-            delete ChanList[channel];
-
-        }
-
-    } else {
-
-        if(ChanList.contains(channel)) {
-            ChanList[channel]->users.removeOne(origin);
-            ChanList[channel]->text.append(origin + " has left the channel (" + message + ")\n");
-        }
+        ChanList.insert(channel,new irc_channel(channel,ServerItem));
+        ChanList[channel]->append("JOINED",origin,"Now talking in " + channel);
         names(channel);
-    }
-
-}
-
-
-
-void IRC_Session::on_msgQuit(const QString& origin, const QString& message)
-{
-    if ( origin == this->nick() ) {
-
+        emit event_newChannel(this,channel);
     }
 
     else {
-
-        for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
-            names(i.key());
-            ChanList[i.key()]->text.append(origin + " has quit (" + message + ")\n");
-        }
-
-        if(isActive)
-            chanText->setText(ChanList[activeChannel]->text);
-
+        ChanList[channel]->append("JOINED",origin,"");
+        ChanList[channel]->users.append(origin);
+        emit event_joined(this,channel);
     }
 
 }
 
 
 
-void IRC_Session::on_msgNickChanged(const QString& origin, const QString& newNick)
-{
-    if (newNick == nick() && isActive) {
+void IRC_Session::on_msgParted(const QString& origin,const QString& channel,const QString& message) {
 
-        nickButton->setText(nick);
-        ChanList[activeChannel]->text.append("Your nick has been changed to: " + nick + "..\n");
-        chanText->setText(ChanList[activeChannel]->text);
-
+    if (origin == nick()) {
+        if(ChanList.contains(channel)) {
+            delete ChanList.take(channel);
+            emit event_parted_channel(this,channel);
+        }
     }
 
-    for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+    else {
+        if(ChanList.contains(channel)) {
+            ChanList[channel]->append("PARTED",origin,message);
+            ChanList[channel]->users.removeOne(origin);
+            emit event_parted(this,channel);
+        }
+    }
+
+}
+
+
+
+void IRC_Session::on_msgQuit(const QString& origin, const QString& message) {
+
+    for(QHash<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+        if(ChanList[i.key()]->users.contains(origin))
+            ChanList[i.key()]->append("QUIT",origin,message);
+    }
+
+    emit event_quit(this,origin);
+
+}
+
+
+
+void IRC_Session::on_msgNickChanged(const QString& origin, const QString& newNick) {
+
+    for(QHash<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
 
         if(ChanList[i.key()]->users.contains(origin)) {
-            names(i.key());
+            if(newNick == nick())
+                ChanList[i.key()]->append("NICK",origin,"You are now chatting as " + newNick);
+            else
+                ChanList[i.key()]->append("NICK",origin,"Is now chatting as " + newNick);
 
-            if(newNick != nick())
-                ChanList[i.key()]->text.append("User " + origin + " has changed their nick to: " + nick + "..\n");
+            ChanList[i.key()]->users.removeOne(origin);
+            ChanList[i.key()]->users.append(newNick);
         }
 
     }
 
-    if(isActive)
-        chanText->setText(ChanList[activeChannel]->text);
+    emit event_nick(this,newNick);
 }
 
 
 
-void IRC_Session::on_msgModeChanged(const QString& origin, const QString& receiver, const QString& mode, const QString& args)
-{
+void IRC_Session::on_msgModeChanged(const QString& origin, const QString& receiver, const QString& mode, const QString& args) {
 
-    if(receiver.startsWith('#') && ChanList.contains(receiver)) {
-
-        ChanList[receiver]->text.append(origin + " has set channel mode(s): " + mode);
-
-        if(!args.isEmpty())
-            ChanList[receiver]->text.append(" (" + args + ")\n");
-        else
-            ChanList[receiver]->text.append("\n");
-
-        if(isActive && receiver == activeChannel)
-            chanText->setText(ChanList[activeChannel]->text);
-
-    }
-
-    else {
-
-        for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
-
-            if(ChanList[i.key()]->users.contains(receiver)) {
-                ChanList[i.key()]->text.append(origin + " has set channel mode(s): " + mode);
-
-                if(!args.isEmpty())
-                    ChanList[i.key()]->text.append(" (" + args + ") on user " + receiver + "\n");
-                else
-                    ChanList[i.key()]->text.append(" on user " + receiver + "\n");
-
-                if(isActive && i.key() == activeChannel)
-                    chanText->setText(ChanList[activeChannel]->text);
-            }
-
-        }
-
+    if(ChanList.contains(receiver)) {
+        ChanList[receiver]->append("MODE",origin,"Has set " + mode + "[" + args + "] on" + receiver);
+        emit event_mode(this,receiver);
     }
 
 }
 
 
 
-void IRC_Session::on_msgTopicChanged(const QString& origin, const QString& channel, const QString& topic)
-{
+void IRC_Session::on_msgTopicChanged(const QString& origin, const QString& channel, const QString& topic) {
 
     if(ChanList.contains(channel)) {
-
-        ChanList[channel]->text.append(origin + " has changed the topic to: " + topic + "\n");
+        ChanList[channel].append("TOPIC",origin, "Changed the topic to: " + topic);
         ChanList[channel]->topic = topic;
+        emit event_topic(this,channel);
+    }
 
-        if(isActive && channel == activeChannel) {
-            chanText->setText(ChanList[activeChannel]->text);
-            chanTitle->setText(ChanList[channel]->topic);
+}
+
+
+
+void IRC_Session::on_msgInvited(const QString& origin, const QString& receiver, const QString& channel) {
+
+    if(receiver.startsWith('#')) {
+        if(ChanList.contains(receiver))
+            ChanList[receiver]->append("CHANINVITE",origin,channel);
+
+        emit event_channel_invite(this,origin,channel);
+    }
+    else
+        emit event_invite(this,origin,channel);
+
+}
+
+
+
+void IRC_Session::on_msgKicked(const QString& origin, const QString& channel, const QString& nick, const QString& message) {
+
+    if(ChanList.contains(channel)) {
+        ChanList[channel]->append("KICK",origin,message);
+        if(nick == nick())
+            emit event_kicked(this,origin,channel);
+        else
+            emit event_kick(this,channel);
+    }
+
+}
+
+
+
+void IRC_Session::on_msgMessageReceived(const QString& origin, const QString& receiver, const QString& message) {
+
+    if(receiver == nick()) {
+        if(!Queries.contains(origin))
+            Queries.insert(origin,new private_message(origin,ServerItem));
+
+        Message temp = Queries[origin]->append(origin,message);
+        emit event_private_message(this,temp);
+    }
+
+    else {
+        if(ChanList.contains(receiver)) {
+            Message temp = ChanList[receiver]->append("MESSAGE",origin,message);
+            emit event_channel_message(this,receiver,temp);
+        }
+    }
+
+}
+
+
+
+void IRC_Session::on_msgNoticeReceived(const QString& origin, const QString& receiver, const QString& notice) {
+
+    Message temp;
+    temp.text = notice;
+    temp.sender = origin;
+    temp.eventType = "NOTICE";
+    temp.timestamp = QTime::currentTime();
+
+    if(receiver == nick()) {
+        if(!UserData.contains(origin))
+            emit event_unknown_notice(this,temp);
+
+        else {
+            for(QHash<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
+                if(ChanList[i.key()]->users.contains(origin)) {
+                    isInChan = true;
+                    break;
+                }
+            }
+            if(isInChan)
+                emit even_notice(this,temp);
+            else
+                emit event_external_notice(this,temp);
         }
 
     }
 
+    return;
 }
 
-
-
-void IRC_Session::on_msgInvited(const QString& origin, const QString& receiver, const QString& channel)
-{
-
+void IRC_Session::on_msgCtcpRequestReceived(const QString& origin, const QString& request) {
+    Message temp;
+    temp.text = request;
+    temp.sender = origin;
+    temp.eventType = "CTCP-REQUEST";
+    temp.timestamp = QTime::currentTime();
+    emit ctcp_request(this,temp);
+    return;
 }
 
-
-
-void IRC_Session::on_msgKicked(const QString& origin, const QString& channel, const QString& nick, const QString& message)
-{
-    if(ChanList.contains(channel)) {
-        ChanList[channel]->text.append(origin + " has kicked " + nick + "(" + message + ")");
-
-        if(isActive && channel == activeChannel)
-            chanText->setText(ChanList[channel]->text);
-
-    }
+void IRC_Session::on_msgCtcpReplyReceived(const QString& origin, const QString& reply) {
+    Message temp;
+    temp.text = reply;
+    temp.sender = origin;
+    temp.eventType = "CTCP-REPLY";
+    temp.timestamp = QTime::currentTime();
+    emit ctcp_reply(this,temp);
+    return;
 }
 
-
-
-void IRC_Session::on_msgMessageReceived(const QString& origin, const QString& receiver, const QString& message)
-{
-    if(ChanList.contains(channel)) {
-        ChanList[channel]->text.append("<" + origin + "> " + message);
-
-        if(isActive && channel == activeChannel)
-            chanText->setText(ChanList[channel]->text);
-    }
-}
-
-
-
-void IRC_Session::on_msgNoticeReceived(const QString& origin, const QString& receiver, const QString& notice)
-{
-    bool isInChan = false;
-
-    for(QMap<QString,irc_channel*>::iterator i = ChanList.begin();i!=ChanList.end();i++) {
-        if(ChanList[i.key()]->users.contains(origin)) {
-            ChanList[i.key()]->text.append("<b>Notice Recieved From:</b> " + origin +
-                                           " <b>Message:</b> " + notice + "\n");
-
-            if(!isInChan)
-                isInChan = true;
-        }
-    }
-
-    if(!isInChan)
-        ChanList[i.key()]->text.append("<b>Notice Recieved From:</b> " + origin + " <b>Message:</b> " + notice +
-                                       " (User is not in any channels as you)\n");
-
-    if(isActive && ChanList[activeChannel]->users.contains(origin))
-        chanText->setText(ChanList[activeChannel]->text);
-
-}
-
-void IRC_Session::on_msgCtcpRequestReceived(const QString& origin, const QString& request)
-{
-
-}
-
-void IRC_Session::on_msgCtcpReplyReceived(const QString& origin, const QString& reply)
-{
-
-}
-
-void IRC_Session::on_msgCtcpActionReceived(const QString& origin, const QString& receiver, const QString& action)
-{
+void IRC_Session::on_msgCtcpActionReceived(const QString& origin, const QString& receiver, const QString& action) {
+    Message temp;
+    temp.text = action;
+    temp.sender = origin;
+    temp.eventType = "CTCP-ACTION";
+    temp.extraParams.append("receiver:" + receiver);
+    temp.timestamp = QTime::currentTime();
+    emit ctcp_action(this,temp);
+    return;
 }
 
 void IRC_Session::on_msgNumericMessageReceived(const QString& origin, uint code, const QStringList& params)

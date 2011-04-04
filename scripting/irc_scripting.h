@@ -2,7 +2,7 @@
 #define IRC_SCRIPTING_H
 
 #include <QObject>
-#include "../irc.h"
+#include "../irc/irc.h"
 
 class sIRC : public QObject
 {

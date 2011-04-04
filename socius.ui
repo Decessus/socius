@@ -192,188 +192,6 @@ border-bottom-right-radius:0px;
      <string/>
     </property>
    </widget>
-   <widget class="QFrame" name="IRCframe">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>55</y>
-      <width>0</width>
-      <height>0</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="styleSheet">
-     <string notr="true"/>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Raised</enum>
-    </property>
-    <widget class="QTreeWidget" name="treeWidget_2">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>136</width>
-       <height>441</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">border:1px solid qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(98, 98, 98, 255))</string>
-     </property>
-     <attribute name="headerVisible">
-      <bool>false</bool>
-     </attribute>
-     <column>
-      <property name="text">
-       <string notr="true">1</string>
-      </property>
-     </column>
-    </widget>
-    <widget class="QLineEdit" name="lineEdit_3">
-     <property name="geometry">
-      <rect>
-       <x>135</x>
-       <y>0</y>
-       <width>603</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">border-radius:none;
-border:1px solid qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(98, 98, 98, 255));</string>
-     </property>
-    </widget>
-    <widget class="QListWidget" name="listWidget_2">
-     <property name="geometry">
-      <rect>
-       <x>598</x>
-       <y>19</y>
-       <width>139</width>
-       <height>390</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">border:1px solid qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(98, 98, 98, 255));</string>
-     </property>
-    </widget>
-    <widget class="QTextEdit" name="textEdit_2">
-     <property name="geometry">
-      <rect>
-       <x>135</x>
-       <y>19</y>
-       <width>463</width>
-       <height>403</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-    </widget>
-    <widget class="QProgressBar" name="progressBar_2">
-     <property name="geometry">
-      <rect>
-       <x>598</x>
-       <y>409</y>
-       <width>138</width>
-       <height>12</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
-     <property name="value">
-      <number>24</number>
-     </property>
-     <property name="format">
-      <string/>
-     </property>
-    </widget>
-    <widget class="QLineEdit" name="lineEdit_4">
-     <property name="geometry">
-      <rect>
-       <x>236</x>
-       <y>421</y>
-       <width>501</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">border:1px solid qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(98, 98, 98, 255));
-border-top-left-radius:0px;
-border-bottom-left-radius:0px;
-border-top-right-radius:0px;
-border-bottom-right-radius:0px;</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="activityStream_3">
-     <property name="geometry">
-      <rect>
-       <x>135</x>
-       <y>419</y>
-       <width>102</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-     <property name="toolTip">
-      <string>Click Here To Change Your Nick on</string>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">border-radius:0px;
-border:1px solid qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(98, 98, 98, 255));
-</string>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="checkable">
-      <bool>false</bool>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-    </widget>
-    <zorder>textEdit_2</zorder>
-    <zorder>lineEdit_3</zorder>
-    <zorder>progressBar_2</zorder>
-    <zorder>activityStream_3</zorder>
-    <zorder>treeWidget_2</zorder>
-    <zorder>listWidget_2</zorder>
-    <zorder>lineEdit_4</zorder>
-   </widget>
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
@@ -555,6 +373,9 @@ border-bottom-right-radius:5px;</string>
     </property>
    </widget>
    <widget class="QFrame" name="webFrame">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -594,7 +415,6 @@ border-bottom-right-radius:5px;</string>
    <zorder>label_4</zorder>
    <zorder>myCloud</zorder>
    <zorder>actionEdit</zorder>
-   <zorder>IRCframe</zorder>
    <zorder>scriptsPortal</zorder>
    <zorder>mediaPortal</zorder>
    <zorder>activityStream</zorder>

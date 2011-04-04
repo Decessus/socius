@@ -17,7 +17,10 @@ SOURCES += main.cpp\
     irc/irc.cpp \
     twitter/twitter.cpp \
     irc/session.cpp \
-    irc/commands.cpp
+    irc/commands.cpp \
+    settingsenvironment/settingenvironment.cpp \
+    irc/events.cpp \
+    irc/channel.cpp
 
 HEADERS  += socius.h \
     updateEvent.h \
@@ -28,7 +31,10 @@ HEADERS  += socius.h \
     twitter/twitter.h \
     irc/session.h \
     irc/utilities.h \
-    irc/commands.h
+    irc/commands.h \
+    settingsenvironment/settingenvironment.h \
+    irc/events.h \
+    irc/channel.h
 
 FORMS    += socius.ui \
     irc.ui
