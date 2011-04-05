@@ -13,6 +13,23 @@
 #include "3rdParty/libircclient-qt-0.5.0/include/ircsession.h"
 #include "3rdParty/libircclient-qt-0.5.0/include/ircutil.h"
 
+/** The 'QSleep' function was taken from a snippet provided by http://berenger.eu/blog/ **/
+class QSleep : public QThread {
+     Q_OBJECT
+     void run (){}
+
+     public :
+     static void usleep(long iSleepTime){
+          QThread::usleep(iSleepTime);
+     }
+     static void sleep(long iSleepTime){
+          QThread::sleep(iSleepTime);
+     }
+     static void msleep(long iSleepTime){
+          QThread::msleep(iSleepTime);
+     }
+};
+
 namespace Ui {
     class IRC;
 }

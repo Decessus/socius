@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     irc/commands.cpp \
     settingsenvironment/settingenvironment.cpp \
     irc/events.cpp \
-    irc/channel.cpp
+    irc/channel.cpp \
+    error.cpp
 
 HEADERS  += socius.h \
     updateEvent.h \

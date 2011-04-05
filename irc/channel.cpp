@@ -1,7 +1,7 @@
 #include "channel.h"
 
-irc_channel::irc_channel(QString channel,QObject* parent = 0) {
-    chanId = new QTreeWidgetItem(parent);
+irc_channel::irc_channel(QString channel,QObject* parent = 0,QTreeWidgetItem* Sparent = 0) {
+    chanId = new QTreeWidgetItem(Sparent);
     chanId->setText(0,channel);
     append("JOIN","*","Now talking in " + channel);
 }

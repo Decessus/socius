@@ -5,15 +5,17 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
+#include <QTcpSocket>
+#include <QThread>
 #include <QHash>
 
 #include "channel.h"
 #include "utilities.h"
 
 struct server_profile {
-    QString HostName,RealName,Ident;
+    QString HostName,RealName,Ident,DefaultServer;
     QHash<QString,QString> NickData; //nick,password
-    QHash<QString,QString> ServerData; //server,password
+    QHash<QString,int> ServerData; //server,port
     QStringList ConnectCommands,AutoJoinChannels;
 };
 
@@ -27,13 +29,14 @@ class IRC_Session : public Irc::Session {
 
     public:
         friend class IRC;
-        explicit ~IRC_Session();
-        explicit IRC_Session(QObject* parent = 0,QTreeWidget* sParent = 0);
-        explicit IRC_Session(server_profile profile,QObject* parent = 0,QTreeWidget* sParent = 0);
+        ~IRC_Session();
+        explicit IRC_Session(QTreeWidget* sParent,QObject* parent = 0);
+        explicit IRC_Session(server_profile* profile = 0,QObject* parent = 0,QTreeWidget* sParent = 0);
 
     private:
         QByteArray Modes;
         QString HostNetwork;
+        server_profile *profile;
         QTreeWidgetItem *ServerItem;
         QByteArray VoiceServerAddress;
         /** OOB(Out of Bounds) Messages

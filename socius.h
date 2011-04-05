@@ -32,7 +32,7 @@ private slots:
     void on_mediaPortal_clicked();
     void on_chatPortal_clicked();
     void on_activityStream_clicked();
-    void getError(errorData* error);
+    void getError(ErrorData* error);
 
 private:
     Ui::socius *ui;

@@ -39,7 +39,7 @@ public:
 
 signals:
     void updated(QString,QString,updateEvent);
-    void emitError(errorData*);
+    void emitError(ErrorData*);
     void status(QString,QString);
 
 public slots:

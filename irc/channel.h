@@ -23,8 +23,9 @@ struct Message {
 
 class private_message {
 public:
-    explicit irc_channel(QString channel,QObject* parent = 0);
-    explicit ~irc_channel();
+    explicit private_message(QString channel,QObject* parent = 0,QTreeWidgetItem* Sparent = 0);
+    explicit private_message();
+    ~private_message();
     QTreeWidgetItem *chanId;
     QQueue<Message> getMessages() { return messages; }
     Message append(QString event, QString origin, QString message);
