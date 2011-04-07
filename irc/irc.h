@@ -2,6 +2,7 @@
 #define IRC_H
 
 #include <QFrame>
+#include <QColor>
 
 #include "session.h"
 #include "utilities.h"
@@ -25,26 +26,33 @@ public:
     ~IRC();
 
 signals:
-    Q_INVOKABLE void onMSG(IRC_Session*,QString,QString);
+    Q_INVOKABLE void onMSG(const IRC_Session*,const QString,const QString);
 
 public Q_SLOTS:
 
-    void onMessage(IRC_Session* session,irc_channel channel);
-    void onJoined(IRC_Session* session,irc_channel channel);
-    void onParted(IRC_Session* session,irc_channel channel);
-    void onQuit(IRC_Session* session,irc_channel channel);
-    void onNickChanged(IRC_Session* session,irc_channel channel);
-    void onModeChanged(IRC_Session* session,irc_channel channel);
-    void onTopicChanged(IRC_Session* session,irc_channel channel);
-    void onInvited(IRC_Session* session,irc_channel channel);
-    void onKicked(IRC_Session* session,irc_channel channel);
-    void onMessageReceived(IRC_Session* session,irc_channel channel);
-    void onNoticeReceived(IRC_Session* session,irc_channel channel);
-    void onCtcpRequestReceived(IRC_Session* session,irc_channel channel);
-    void onCtcpReplyReceived(IRC_Session* session,irc_channel channel);
-    void onCtcpActionReceived(IRC_Session* session,irc_channel channel);
-    void onNumericMessageReceived(IRC_Session* session,irc_channel channel);
-    void onUnknownMessageReceived(IRC_Session* session,irc_channel channel);
+    void ctcp_reply(IRC_Session* Session,Message Data);
+    void ctcp_action(IRC_Session* Session,Message Data);
+    void ctcp_request(IRC_Session* Session,Message Data);
+
+    void event_connected(IRC_Session* Session);
+    void event_disconnected(IRC_Session* Session); //Will come with disconnection data later
+    void event_quit(IRC_Session* Session,Message Data);
+    void event_nick(IRC_Session* Session,QString Channel);
+    void event_topic(IRC_Session* Session,QString Channel);
+    void even_notice(IRC_Session* Session,Message Data);
+    void event_joined(IRC_Session* Session,QString Channel);
+    void event_newChannel(IRC_Session* Session,QString Channel);
+    void event_mode(IRC_Session* Session,QString Channel,Message Data);
+    void event_kick(IRC_Session* Session,QString Channel,Message Data);
+    void event_parted(IRC_Session* Session,QString Channel,Message Data);
+    void event_invite(IRC_Session* Session,QString Nick,QString Channel);
+    void event_kicked(IRC_Session* Session,QString Channel,Message Data);
+    void event_unknown_notice(IRC_Session* Session,Message Data);
+    void event_private_message(IRC_Session* Session,Message Data);
+    void event_external_notice(IRC_Session* Session,Message Data);
+    void event_parted_channel(IRC_Session* Session,QString Channel,Message Data);
+    void event_channel_message(IRC_Session* Session,QString Channel,Message Data);
+    void event_channel_invite(IRC_Session *Session,QString Nick,QString Channel,QString nChannel);
 
     void newSession();
     void newSession(QString host);
@@ -58,12 +66,26 @@ public Q_SLOTS:
 
 private:
     Ui::IRC *ui;
-    IRC_Session *activeSession;
 
     bool wasStatus;
 
-    QMap<QString,IRC_Session*> sessions;
+    void RefreshChannelUsers(IRC_Session *Session,QString Channel);
+    void RefreshChannelTopic(IRC_Session *Session,QString Channel);
+    void RefreshChannelMessages(IRC_Session *Session,QString Channel);
 
+    QString ThemeMessage(Message message);
+
+    QList<IRC_Session*> sessions;
+    QHash<QString,QString> EventTemplates;
+
+    struct EventColors {
+        QColor Mode,Quit,Topic,Kicked,
+            Parted,Joined,Nick,Notice,Invite,
+            Message,Connected,Mentioned,
+            Disconnected,ChannelInvite;
+    };
+
+    EventColors eventColor;
 private slots:
 };
 

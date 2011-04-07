@@ -13,52 +13,121 @@
 #include "3rdParty/libircclient-qt-0.5.0/include/ircsession.h"
 #include "3rdParty/libircclient-qt-0.5.0/include/ircutil.h"
 
-/** The 'QSleep' function was taken from a snippet provided by http://berenger.eu/blog/ **/
-class QSleep : public QThread {
-     Q_OBJECT
-     void run (){}
+namespace Status {
 
-     public :
-     static void usleep(long iSleepTime){
-          QThread::usleep(iSleepTime);
-     }
-     static void sleep(long iSleepTime){
-          QThread::sleep(iSleepTime);
-     }
-     static void msleep(long iSleepTime){
-          QThread::msleep(iSleepTime);
-     }
-};
+    /**
+        Block: Block *all* private messages that you do not start
+        Alert: Request user to allow new private message
+        Known: Only accept private messages if you are in the channel with the user
+        Friends: Only accept private messages from people you mark as a friend
 
-namespace Ui {
-    class IRC;
+            'Known' is the default state.
+      **/
+    enum PrivateMessage {
+        PM_Alert,PM_Block,PM_Friends,PM_Known
+    };
+
+    /**
+        Block: Block *all* channel invites
+        Alert: Request user to join channel
+        Idle: Show request in active channel
+        Join: Auto join channel
+
+            'Alert' is the default state.
+      **/
+    enum ChannelInvite {
+        CI_Alert,CI_Block,CI_Idle,CI_Join
+    };
+
+    /**
+        Auto: Automatically log by date
+        Buffer: Only log the messages in the active buffer
+        None: Never log
+        Session: Per session end, ask if the users wants to log or not
+
+            'Auto' is the default state
+      **/
+    enum LogState {
+        LOG_Auto,LOG_Session,LOG_Buffer,LOG_None
+    };
+
+    /** User activity status **/
+    enum UserStatus {
+        Away,Busy,DoNotDisturb,Online
+    };
 }
 
-struct irc_event_data {
-    QString message, origin, target;
-    QMap<QString,QString> otherData;
+struct ProfileInfo {
+    QString Bio,
+            Motto,
+            Status,
+            PersonalLink1,
+            PersonalLink2,
+            PersonalLink3;
 };
 
-struct irc_server {
-    QStringList addresses, autoJoinChannels, connectCommands;
-    QString defaultAddress, nickPass, serverPass, networkName;
-    int port;
-    bool useSSL;
-    bool autoConnect;
-    bool bypassProxySettings;
+struct UserProfile {
+
+    bool AutoRejoinOnKick;
+
+    QHash<QString,QString> NickNames;
+
+    /** Global server and network settings **/
+    QString Ident,
+            RealName,
+            ProxyUser,
+            ProxyServer,
+            ProxyPassword;
+
+    /** Personal Profile Settings **/
+    QPixmap *DisplayPicture;
+    QStringList QuitMessages;
+
+    ProfileInfo ProfileDetails;
+    Status::LogState LoggingRule;
+    Status::UserStatus OnlineStatus;
+    Status::ChannelInvite ChannelInviteRule;
+    Status::PrivateMessage PrivateMessageRule;
 };
 
-struct stream_link {
-    QString hostRoot;
-    QRegExp extractMethod;
-    const QString linkData;
+struct ServerProfile {
+
+    quint16 DefaultPort,
+            SSLPort;
+
+    bool ForceProxyBypass,
+            DetermineBestHost;
+
+    QString ServerPassword,
+            HostName;
+
+    QStringList ConnectCommands,
+            AutoJoinChannels,
+            Servers;
 };
 
-struct IRC_Settings {
-    QList<irc_server> serversList;
-    QString proxyHost,proxyHostType;
-    QMap<QString /*event*/,QString /*template*/> messageTemplates;
-    int proxyHostPort;
+struct User {
+    bool IsIrcOper;
+
+    QString RealName,
+            UserName,
+            AwayReason,
+            HostServer,
+            UserAddress,
+            UserClientInfo,
+            UserSignOnTime,
+            HostServerMotto;
+
+    QPixmap DisplayPic;
+    QStringList Channels;
+    QTime LastRefreshTime;
 };
+
+struct Message {
+    QString eventType,sender,text,timestamp;
+    QStringList extraParams;
+};
+
+const UserProfile *ClientProfile;
 
 #endif // UTILITIES_H

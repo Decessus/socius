@@ -5,19 +5,11 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
-#include <QTcpSocket>
-#include <QThread>
+#include <QPixmap>
 #include <QHash>
 
 #include "channel.h"
 #include "utilities.h"
-
-struct server_profile {
-    QString HostName,RealName,Ident,DefaultServer;
-    QHash<QString,QString> NickData; //nick,password
-    QHash<QString,int> ServerData; //server,port
-    QStringList ConnectCommands,AutoJoinChannels;
-};
 
 class IRC_Session : public Irc::Session {
     Q_OBJECT
@@ -30,30 +22,41 @@ class IRC_Session : public Irc::Session {
     public:
         friend class IRC;
         ~IRC_Session();
-        explicit IRC_Session(QTreeWidget* sParent,QObject* parent = 0);
-        explicit IRC_Session(server_profile* profile = 0,QObject* parent = 0,QTreeWidget* sParent = 0);
+        explicit IRC_Session(QObject* parent = 0,QTreeWidget* sParent = 0);
+        explicit IRC_Session(ServerProfile* Profile = 0,QObject* parent = 0,QTreeWidget* sParent = 0);
+
+        bool IsActive;
+
+        QString ActiveChannel;
+        QHash<QString,irc_channel*> ChanList;
+
+        QTreeWidgetItem *ServerItem;
+
+        /** Active messages
+          Messages that will appear in the first channel that activated
+          within the session.
+          **/
+        QQueue<Message> ActiveMessages;
+        QHash<QString,User> KnownUsers;
 
     private:
         QByteArray Modes;
-        QString HostNetwork;
-        server_profile *profile;
-        QTreeWidgetItem *ServerItem;
         QByteArray VoiceServerAddress;
+
         /** OOB(Out of Bounds) Messages
           A message was received outside of user scope
-            Example: Recieved a message from a channel you are not
-              in, or from a channel that was not properly created by Socius.
+          Example: Recieved a message from a channel you are not
+                in, or from a channel that was not properly created by Socius.
           **/
         QQueue<Message> OOB_Messages;
         QQueue<Message> NumericMessages;
         QQueue<Message> UnknownMessages;
         QQueue<QString> ConnectCommands;
 
-        QHash<QString,user> UserData;
-        QHash<QString,QString> NickData; //nick,password
-        QHash<QString,QString> ServerData; //server,password
-        QHash<QString,irc_channel*> ChanList;
+        ServerProfile *Profile;
+
         QHash<QString,private_message*> Queries;
+        QHash<QString,QPixmap> UserDisplayPicCache;
 
     protected Q_SLOTS:
         void on_connected();
@@ -90,7 +93,6 @@ class IRC_Session : public Irc::Session {
         void event_mode(IRC_Session*,QString,Message);
         void event_kick(IRC_Session*,QString,Message);
         void event_parted(IRC_Session*,QString,Message);
-        void event_channel_invite(IRC_Session*,QString);
         void event_invite(IRC_Session*,QString,QString);
         void event_kicked(IRC_Session*,QString,Message);
         void event_unknown_notice(IRC_Session*,Message);
@@ -98,6 +100,7 @@ class IRC_Session : public Irc::Session {
         void event_external_notice(IRC_Session*,Message);
         void event_parted_channel(IRC_Session*,QString,Message);
         void event_channel_message(IRC_Session*,QString,Message);
+        void event_channel_invite(IRC_Session*,QString,QString,QString);
 };
 
 #endif // SESSION_H

@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     settingsenvironment/settingenvironment.cpp \
     irc/events.cpp \
     irc/channel.cpp \
-    error.cpp
+    error.cpp \
+    irc/numeric_messages.cpp
 
 HEADERS  += socius.h \
     updateEvent.h \
@@ -34,7 +35,6 @@ HEADERS  += socius.h \
     irc/utilities.h \
     irc/commands.h \
     settingsenvironment/settingenvironment.h \
-    irc/events.h \
     irc/channel.h
 
 FORMS    += socius.ui \

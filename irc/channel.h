@@ -9,23 +9,12 @@
 #include <QQueue>
 #include <QPixmap>
 
-struct user {
-    QByteArray modes;
-    QStringList channels,aliases;
-    QString clientInfo;
-    QPixmap displayPic;
-};
-
-struct Message {
-    QString eventType,sender,text,timestamp;
-    QStringList extraParams;
-};
+#include "utilities.h"
 
 class private_message {
 public:
-    explicit private_message(QString channel,QObject* parent = 0,QTreeWidgetItem* Sparent = 0);
-    explicit private_message();
-    ~private_message();
+    explicit irc_channel(QString channel,QObject* parent = 0);
+    explicit ~irc_channel();
     QTreeWidgetItem *chanId;
     QQueue<Message> getMessages() { return messages; }
     Message append(QString event, QString origin, QString message);

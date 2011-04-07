@@ -17,28 +17,26 @@ IRC::IRC(QWidget *parent) :
                 parent->frameGeometry().width(),
                 parent->frameGeometry().height()-55);
 
-    sessionCount = 0;
-
     connect(chanInput,SIGNAL(returnPressed()),this,SLOT(onMsgEntered()));
 
     chanText = new QTextEdit(this);
-    chanText->setGeometry(0,22,this->width()-145,this->height()-44);
+    chanText->setGeometry(0,22,width()-145,height()-44);
     chanText->setVisible(true);
 
     chanInput = new QLineEdit(this);
-    chanInput->setGeometry(102,this->height()-22,22,this->width()-102);
+    chanInput->setGeometry(102,height()-22,22,width()-102);
     chanInput->setVisible(true);
 
     nickButton = new QPushButton(this);
-    nickButton->setGeometry(0,this->height()-22,22,102);
+    nickButton->setGeometry(0,height()-22,22,102);
     nickButton->setVisible(true);
 
     nickList = new QListWidget(this);
-    nickList->setGeometry(this->width()-145,22,this->height()-44,145);
+    nickList->setGeometry(width()-145,22,height()-44,145);
     nickList->setVisible(true);
 
     chanTitle = new QLineEdit(this);
-    chanTitle->setGeometry(0,0,22,this->width());
+    chanTitle->setGeometry(0,0,22,width());
     chanTitle->setVisible(true);
 
 }
@@ -84,59 +82,137 @@ void IRC::newSession(QString host, int port, QStringList args) {
 void IRC::itemClicked(QTreeWidgetItem *item, int i) {
 
     //Was the item a session status window?
-    if(sessions.contains(item)) {
+    if(item->childCount()>0 || item->text(0) == "< new >") {
 
-        if(sessions[item] != activeSession)
-           activeSession = sessions[item];
+        int i;
+        for(i=0;i<sessions.count();i++) {
+            if(sessions.at(i)->IsActive)
+                sessions.at(i)->IsActive = false;
 
-        //Change the GUI for Status Window
-        chanTitle->setVisible(false);
-        nickList->setVisible(false);
+            if(sessions.at(i)->ServerItem == item)
+                break;
+        }
+
+        //Server was found, otherwise there was an OOB Error occurrence
+        if(i<sessions.count()) {
+            sessions.at(i)->IsActive = true;
+            RefreshChannelMessages(sessions.at(i),"status");
+            //Change the GUI for Status Window
+            chanTitle->setVisible(false);
+            nickList->setVisible(false);
+        }
     }
 
-    else if(sessions.contains(item->parent())) {
-        if(sessions[item->parent()] != activeSession)
-            activeSession = sessions[item->parent()];
+    else {
 
-        if(activeSession->ChanList.contains(item->text(0))) {
-            activeSession->activeChannel = item->text(0);
+        //Recover from status window
+        if(!chanTitle->isVisible())
+            chanTitle->setVisible(true);
 
-            chanTitle->setText(activeSession->ChanList[channel]->topic);
-            chanText->setText(activeSession->ChanList[channel]->text);
+        if(!nickList->isVisible())
+            nickList->setVisible(true);
 
-            //Delete the physical QListWidgetItems from the nick list
-            for(int i=0;i<nickList->count();i++)
-                delete nickList->item(i);
+        int i;
+        for(i=0;i<sessions.count();i++) {
+            if(sessions.at(i)->IsActive)
+                sessions.at(i)->IsActive = false;
 
-            //Add the new QListWidgetItems
-            for(int i=0;i<activeSession->ChanList[channel]->users.size();i++)
-                nickList->addItem(new QListWidgetItem(activeSession->ChanList[channel]->users.at(i)));
+            if(sessions.at(i)->ServerItem == item->parent())
+                break;
+        }
+
+        //Server was found, otherwise there was an OOB Error occurrence
+        if(i<sessions.count()) {
+            sessions.at(i)->IsActive = true;
+            RefreshChannelMessages(sessions.at(i),item->text(0));
+            RefreshChannelTopic(sessions.at(i),item->text(0));
+            RefreshChannelUsers(sessions.at(i),item->text(0));
         }
     }
 }
 
-void IRC::disconnected(IRC_Session* session)
-{
+void IRC::RefreshChannelMessages(IRC_Session *Session, QString Channel) {
+    chanText->clear();
+    QQueue<Message> temp = Session->ChanList[Channel]->getMessages();
 
-    for(QMap<QString,irc_channel*>::iterator i = session->ChanList.begin();
-    i!=session->ChanList.end();i++) {
-        i.chanId->setText("(" + i.chanId->text() + ")");
-        i.text += ("Disconnected from " + host() + "..\n");
-    }
+    while (!temp.isEmpty())
+        chanText->append(ThemeMessage(temp.dequeue()));
+}
 
-    if(session == activeSession)
-        chanText->setText(ChanList[activeChannel]->text);
+void IRC::RefreshChannelTopic(IRC_Session *Session, QString Channel) {
+    chanTitle->setText(Session->ChanList[Channel]->topic);
+}
 
-    else {
+void IRC::RefreshChannelUsers(IRC_Session *Session, QString Channel) {
+    QStringList temp = Session->ChanList[Channel]->users;
 
-        for(QList<IRC_Session>::iterator i = sessions.begin();i!=sessions.end();i++) {
-            if(i.value() == session) {
+    //Initially sort by channel mode, then alphabetically
+    QStringList Owner,Sop,Op,Hop,Voice,NoMode;
 
-            }
+    foreach (const QString& user,temp) {
+
+        switch (user.at(0)) {
+
+        case '~':
+            Owner.append(user);
+            break;
+
+        case '&':
+            Sop.append(user);
+            break;
+
+        case '@':
+            Op.append(user);
+            break;
+
+        case '%':
+            Hop.append(user);
+            break;
+
+        case '+':
+            Voice.append(user);
+            break;
+
+        default:
+            NoMode.append(user);
+            break;
         }
 
     }
 
-    return;
+    //Delete the physical QListWidgetItems from the nick list
+    for(int i=0;i<nickList->count();i++)
+        delete nickList->item(i);
 
+    //Add and sort owners
+    Owner.sort();
+    foreach (const QString& user,Owner)
+        nickList->addItem(new QListWidgetItem(user));
+
+    //Add and sort owners
+    Sop.sort();
+    foreach (const QString& user,Sop)
+        nickList->addItem(new QListWidgetItem(user));
+
+    //Add and sort owners
+    Op.sort();
+    foreach (const QString& user,Op)
+        nickList->addItem(new QListWidgetItem(user));
+
+    //Add and sort owners
+    Hop.sort();
+    foreach (const QString& user,Hop)
+        nickList->addItem(new QListWidgetItem(user));
+
+    //Add and sort owners
+    Voice.sort();
+    foreach (const QString& user,Voice)
+        nickList->addItem(new QListWidgetItem(user));
+
+    //Add and sort owners
+    NoMode.sort();
+    foreach (const QString& user,NoMode)
+        nickList->addItem(new QListWidgetItem(user));
+
+    return;
 }

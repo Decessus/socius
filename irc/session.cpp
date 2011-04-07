@@ -1,8 +1,8 @@
 #include "session.h"
 
-IRC_Session::IRC_Session(QObject* parent,QTreeWidget* sParent) : Irc::Session(parent) {
+IRC_Session::IRC_Session(QObject* parent,,QTreeWidget* sParent) : Irc::Session(parent) {
 
-    ChanList.insert("status",new irc_channel(this));
+    ChanList.insert("status",new irc_channel);
     ServerItem = new QTreeWidgetItem(sParent);
     ServerItem->setText(0,"< new >");
     Message temp = ChanList["status"]->append("INIT","*","Initializing protocol..");
@@ -28,12 +28,11 @@ IRC_Session::IRC_Session(QObject* parent,QTreeWidget* sParent) : Irc::Session(pa
 
 }
 
-IRC_Session::IRC_Session(server_profile *profile, QObject *parent, QTreeWidget *sParent)  : Irc::Session(parent) {
+IRC_Session::IRC_Session(ServerProfile profile, QObject *parent = 0, QTreeWidget *sParent = 0)  : Irc::Session(parent) {
 
-    ChanList.insert("status",new irc_channel(this));
+    ChanList.insert("status",new irc_channel);
     ServerItem = new QTreeWidgetItem(sParent);
-    ServerItem->setText(0,profile->HostName);
-
+    ServerItem->setText(0,profile.HostName);
     Message temp = ChanList["status"]->append("INIT","*","Initializing protocol..");
     emit init_message(this,temp);
 
@@ -58,143 +57,10 @@ IRC_Session::IRC_Session(server_profile *profile, QObject *parent, QTreeWidget *
     temp = ChanList["status"]->append("INIT","*","Setting up server environment..");
     emit init_message(this,temp);
 
-    setAutoJoinChannels(profile->AutoJoinChannels);
-    setRealName(profile->RealName);
+    setAutoJoinChannels(Profile->AutoJoinChannels);
 
-    if(!profile->DetermineBestHost || profile->ServerData.count()<=1) {
-        if(profile->DefaultServer.isEmpty()) {
-            QHash<QString,int>::iterator i = profile->ServerData.begin();
-            temp = ChanList["status"]->append("INIT","*","Could not determine best host. Using " +
-                                              i.key() + " instead.");
-            emit init_message(this,temp);
-
-            setHost(i.key());
-
-            if(profile->ServerData.value(i.key()))
-                setPort(profile->ServerData.value(i.key()));
-            else {
-                if(!profile->UseSSL) {
-                    setPort(6667);
-                }
-                else
-                    setPort(7000);
-            }
-        }
-
-        else {
-            setHost(profile->DefaultServer);
-
-            if(profile->ServerData.value(profile->DefaultServer))
-                setPort(profile->ServerData.value(profile->DefaultServer));
-            else {
-                if(!profile->UseSSL) {
-                    setPort(6667);
-                }
-                else
-                    setPort(7000);
-            }
-        }
-    }
-
-    //Determine best host by average connection time
-    else {
-        QTime *PingTimer = new QTime(),*DelayTimer = new QTime();
-        QHash<int,QString> PingResponses;
-        PingTimer->start();
-        DelayTimer->start();
-
-        temp = ChanList["status"]->append("INIT","*","Determining the fastest connection response on the network..");
-        emit init_message(this,temp);
-
-        /**
-          Since Linux machines will require root privs to use ICMP, we will
-            measure the ammount of time to receive a connection response, rather
-            than send an ICMP Ping.
-          **/
-        for(int p=0;p<5;p++) {
-            DelayTimer->restart();
-
-            for(QHash<QString,int>::iterator i = ServerData.begin();i!=ServerData.end();i++) {
-                QTcpSocket *PingSocket = new QTcpSocket(this);
-                PingTimer->restart();
-                PingSocket->connectToHost(i.key(),i.value());
-                PingResponses.insert(PingTimer->elapsed(),i.key());
-                PingSocket->disconnectFromHost();
-                delete PingSocket;
-            }
-
-            if(DelayTimer->elapsed()<1000)
-                QSleep::msleep(1000-DelayTimer->elapsed());
-        }
-
-        QPair<int,QString> BestResponse;
-        for(QHash<int,QString>::iterator i=PingResponses.begin();i!=PingResponses.end();i++) {
-            if(i=PingResponses.begin()) {
-                BestResponse.first = i.key();
-                BestResponse.second = i.value();
-            }
-
-            else {
-                if(BestResponse.first>i.key()) {
-                    BestResponse = i.key();
-                    BestResponse.second = i.value();
-                }
-            }
-        }
-
-        if(!BestResponse.second.isEmpty()) {
-            temp = ChanList["status"]->append("INIT","*","Determined best host as " +
-                                              BestResponse.second + "..");
-            emit init_message(this,temp);
-
-            setHost(BestResponse.second);
-
-            if(profile->ServerData.value(BestResponse.second))
-                setPort(profile->ServerData.value(BestResponse.second));
-            else {
-                if(!profile->UseSSL) {
-                    setPort(6667);
-                }
-                else
-                    setPort(7000);
-            }
-        }
-
-        else {
-            if(profile->DefaultServer.isEmpty()) {
-                QHash<QString,int>::iterator i = profile->ServerData.begin();
-                temp = ChanList["status"]->append("INIT","*","Could not determine best host. Using " +
-                                                  i.key() + " instead.");
-                emit init_message(this,temp);
-
-                setHost(i.key());
-
-                if(profile->ServerData.value(i.key()))
-                    setPort(profile->ServerData.value(i.key()));
-                else {
-                    if(!profile->UseSSL) {
-                        setPort(6667);
-                    }
-                    else
-                        setPort(7000);
-                }
-            }
-
-            else {
-                setHost(profile->DefaultServer);
-
-                if(profile->ServerData.value(profile->DefaultServer))
-                    setPort(profile->ServerData.value(profile->DefaultServer));
-                else {
-                    if(!profile->UseSSL) {
-                        setPort(6667);
-                    }
-                    else
-                        setPort(7000);
-                }
-            }
-        }
-    }
+    if(ClientProfile->RealName)
+        setRealName(ClientProfile->RealName);
 
 }
 
@@ -223,17 +89,29 @@ void IRC_Session::on_disconnected() {
 void IRC_Session::on_msgJoined(const QString& origin, const QString& channel) {
 
     if ( origin == nick() ) {
-        ChanList.insert(channel,new irc_channel(channel,ServerItem));
-        ChanList[channel]->append("JOINED",origin,"Now talking in " + channel);
-        names(channel);
-        emit event_newChannel(this,channel);
+
+        //Prevent recreation of the channel if it is a channel you are rejoining
+        if(ChanList.contains(channel)) {
+            Message temp = ChanList[channel]->append("JOINED","*","Now talking in " + channel);
+            names(channel);
+            emit event_joined(this,channel,temp);
+        }
+
+        else {
+            ChanList.insert(channel,new irc_channel(channel,ServerItem));
+            ChanList[channel]->append("JOINED","*","Now talking in " + channel);
+            names(channel);
+            emit event_newChannel(this,channel);
+        }
     }
 
     else {
-        ChanList[channel]->append("JOINED",origin,"");
+        Message temp = ChanList[channel]->append("JOINED",origin,"");
         ChanList[channel]->users.append(origin);
-        emit event_joined(this,channel);
+        emit event_joined(this,channel,temp);
     }
+
+    return;
 
 }
 
@@ -255,6 +133,8 @@ void IRC_Session::on_msgParted(const QString& origin,const QString& channel,cons
             emit event_parted(this,channel);
         }
     }
+
+    return;
 
 }
 
@@ -321,7 +201,7 @@ void IRC_Session::on_msgInvited(const QString& origin, const QString& receiver, 
 
     if(receiver.startsWith('#')) {
         if(ChanList.contains(receiver))
-            ChanList[receiver]->append("CHANINVITE",origin,channel);
+            ChanList[receiver]->append("INVITE",origin,receiver,channel);
 
         emit event_channel_invite(this,origin,channel);
     }
@@ -403,7 +283,6 @@ void IRC_Session::on_msgCtcpRequestReceived(const QString& origin, const QString
     temp.sender = origin;
     temp.eventType = "CTCP-REQUEST";
     temp.timestamp = QTime::currentTime();
-
     emit ctcp_request(this,temp);
     return;
 }
@@ -414,7 +293,6 @@ void IRC_Session::on_msgCtcpReplyReceived(const QString& origin, const QString& 
     temp.sender = origin;
     temp.eventType = "CTCP-REPLY";
     temp.timestamp = QTime::currentTime();
-
     emit ctcp_reply(this,temp);
     return;
 }
@@ -426,56 +304,19 @@ void IRC_Session::on_msgCtcpActionReceived(const QString& origin, const QString&
     temp.eventType = "CTCP-ACTION";
     temp.extraParams.append("receiver:" + receiver);
     temp.timestamp = QTime::currentTime();
-
     emit ctcp_action(this,temp);
     return;
 }
 
-void IRC_Session::on_msgNumericMessageReceived(const QString& origin, uint code, const QStringList& params)
+void IRC_Session::on_msgUnknownMessageReceived(const QString& origin, const QStringList& params)
 {
-    switch(code) {
+    ChanList["status"]->text += "<b>Unknown Message Recieved From:</b> " + origin + " <b>Message:</b> ";
 
-        /* Topic change already handled by libircclient-qt, was this a possible fix?
-    case 332:
-
-        if(ChanList[origin]) {
-            ChanList[origin]->topic = params.at(2);
-
-            if((activeChannel->chanId->text() == origin) && isActive)
-                chanTitle->setText(params.at(2));
-
-        }
-
-    break;
-    */
-
-    case 353:
-        if(ChanList.contains(params.at(2))) {
-            QString buff(params.at(3));
-            ChanList[params.at(2)]->users = buff.split(" ",QString::SkipEmptyParts);
-            emit event_names(this,params.at(2));
-        }
-    break;
-
-    default:
-        Message temp;
-        temp.sender = origin;
-        temp.eventType = "NUM_" + code;
-        temp.extraParams.append(params);
-        temp.timestamp = QTime::currentTime();
-        NumericMessages.enqueue(temp);
+    if(!params.isEmpty()) {
+        for (int i=0;i<params.size();++i)
+            ChanList["status"]->text += append(params.at(i) + " ");
     }
 
-}
+    ChanList["status"]->text += "\n";
 
-void IRC_Session::on_msgUnknownMessageReceived(const QString& origin, const QStringList& params) {
-    Message temp;
-    temp.sender = origin;
-    temp.eventType = "UNKNOWN";
-    temp.extraParams.append(params);
-    temp.timestamp = QTime::currentTime();
-    UnknownMessages.enqueue(temp);
-
-    emit event_unknown(this,temp);
-    return;
 }
